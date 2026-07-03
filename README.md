@@ -69,6 +69,14 @@ matUtils --version
 ```
 
 
+## Running 
+
+```bash
+snakemake -s Snakefile_pango_extract.smk --cores 2
+
+```
+
+
 ## Repository structure
 
 ```text
