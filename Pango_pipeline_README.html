@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 18mm 18mm;
+    @bottom-center { content: counter(page) " / " counter(pages); font-family: "Helvetica", sans-serif; font-size: 8.5pt; color: #8a94a6; }
+    @bottom-left { content: "Pango clade-founder pipeline"; font-family: "Helvetica", sans-serif; font-size: 8.5pt; color: #b3bccb; }
+  }
+  * { box-sizing: border-box; }
+  html { -weasy-hyphens: none; }
+  body {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 10.2pt; line-height: 1.5; color: #24303f; margin: 0;
+  }
+  h1 { font-size: 23pt; color: #14324f; margin: 0 0 2pt 0; line-height: 1.15; letter-spacing: -0.2pt; }
+  h2 {
+    font-size: 15pt; color: #14324f; margin: 22pt 0 6pt 0;
+    padding-bottom: 3pt; border-bottom: 2px solid #2f6f9f;
+    -weasy-bookmark-level: 1;
+  }
+  h3 { font-size: 11.6pt; color: #1b4a6b; margin: 15pt 0 3pt 0; }
+  h2 + h3 { margin-top: 8pt; }
+  p { margin: 0 0 7pt 0; }
+  code {
+    font-family: "DejaVu Sans Mono", monospace; font-size: 8.9pt;
+    background: #eef2f7; color: #17384f; padding: 0.5pt 3pt; border-radius: 3px;
+  }
+  pre {
+    font-family: "DejaVu Sans Mono", monospace; font-size: 8.5pt; line-height: 1.4;
+    background: #0f2233; color: #e7eef5; padding: 9pt 11pt; border-radius: 6px;
+    margin: 6pt 0 9pt 0; white-space: pre-wrap; word-wrap: break-word;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; font-size: 8.5pt; }
+  .lede { font-size: 10.6pt; color: #46566a; margin-top: 2pt; }
+  .meta { font-size: 8.8pt; color: #8a94a6; margin-top: 4pt; }
+  .card {
+    border: 1px solid #d9e1ec; border-left: 4px solid #2f6f9f; border-radius: 6px;
+    padding: 8pt 11pt 9pt 11pt; margin: 9pt 0; background: #fbfdff;
+    -weasy-break-inside: avoid;
+  }
+  .card.extract { border-left-color: #17a583; }
+  .card.founder { border-left-color: #d99512; }
+  .card h3 { margin-top: 0; }
+  .tag {
+    display: inline-block; font-size: 7.6pt; font-weight: bold; letter-spacing: 0.4pt;
+    text-transform: uppercase; padding: 1.5pt 6pt; border-radius: 10px; vertical-align: middle;
+    margin-left: 6pt; color: #fff; background: #2f6f9f;
+  }
+  .tag.extract { background: #17a583; }
+  .tag.founder { background: #d99512; }
+  dl.io { margin: 4pt 0 2pt 0; }
+  dl.io dt { font-weight: bold; color: #4a5a6e; font-size: 8.9pt; margin-top: 4pt; }
+  dl.io dd { margin: 0 0 1pt 0; font-size: 9.4pt; }
+  .callout {
+    background: #eef7f2; border: 1px solid #bfe3d4; border-radius: 6px;
+    padding: 8pt 11pt; margin: 9pt 0; font-size: 9.6pt; -weasy-break-inside: avoid;
+  }
+  .callout.warn { background: #fdf3e6; border-color: #f2d3a0; }
+  .callout .lbl { font-weight: bold; color: #14324f; }
+  table { border-collapse: collapse; width: 100%; margin: 8pt 0 10pt 0; font-size: 8.9pt; -weasy-break-inside: avoid; }
+  th, td { border: 1px solid #d4dce7; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #eaf1f8; color: #14324f; font-weight: bold; }
+  td code { font-size: 8.2pt; }
+  .imgwrap { text-align: center; margin: 10pt 0 4pt 0; }
+  .imgwrap img { width: 100%; max-width: 172mm; }
+  .cap { font-size: 8.4pt; color: #8a94a6; text-align: center; margin-top: 2pt; }
+  ul, ol { margin: 3pt 0 8pt 0; padding-left: 17pt; }
+  li { margin-bottom: 3pt; }
+  .pagebreak { -weasy-break-before: page; }
+  .kicker { font-size: 9pt; letter-spacing: 1.5pt; text-transform: uppercase; color: #2f6f9f; font-weight: bold; }
+  .muts { font-family: "DejaVu Sans Mono", monospace; font-size: 8.4pt; color: #7a4e0e; }
+  a { color: #2f6f9f; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="kicker">Computational SARS-CoV-2 genomics &middot; teaching handout</div>
+<h1>Reconstructing clade-founder genomes<br>for Pango lineages</h1>
+<p class="lede">A step-by-step walkthrough of the Snakemake pipeline: what each step does, why it is there, and what it produces. Written for readers who have never used Snakemake.</p>
+<p class="meta">Pipelines: <code>Snakefile_pango_extract</code> and <code>Snakefile_pango_founders</code> &nbsp;&middot;&nbsp; Script: <code>scripts/5b_pango_founder_fasta.py</code></p>
+
+<h2>1 &nbsp; What this pipeline is for</h2>
+<p>SARS-CoV-2 evolves as it spreads: each transmission can introduce mutations, and the genomes sampled worldwide form a giant family tree. Public databases distribute this tree in a compact form called a <strong>mutation-annotated tree</strong> (MAT) &mdash; a phylogeny of millions of genomes with the mutations placed on the branches where they arose.</p>
+<p>Related genomes are grouped into named <strong>lineages</strong>. Two naming systems are in common use: <strong>Nextstrain clades</strong> (coarse labels such as <code>20B</code> or <code>24E</code>) and <strong>Pango lineages</strong> (fine-grained labels such as <code>AD.2</code> or <code>KP.3.1.1</code>). One Nextstrain clade can contain hundreds of Pango lineages. Section&nbsp;6 shows exactly why that difference matters for our analysis.</p>
+<p>To study how mutations affect viral fitness, we first need each lineage's <strong>founder genome</strong> &mdash; the reconstructed ancestral sequence at the point the lineage began. Every later mutation in that lineage is then measured relative to this founder. If the founder is wrong or too coarse, every downstream count is off. So the two jobs of this pipeline are:</p>
+<ol>
+  <li><strong>Extract</strong> the part of the global tree belonging to a chosen Pango lineage, and pull out its mutations and sample paths.</li>
+  <li><strong>Reconstruct the founder genome</strong> (a FASTA sequence) for that lineage, plus the list of substitutions that define it.</li>
+</ol>
+<p>Both are done <em>per Pango lineage</em>, and the lineages of interest are simply listed in a configuration file.</p>
+
+<h2>2 &nbsp; Snakemake in five minutes</h2>
+<p>Snakemake is a workflow manager. Instead of running commands by hand in the right order, you declare a set of <strong>rules</strong>, and Snakemake works out the order for you and runs only what is needed.</p>
+<p>Each rule declares three things:</p>
+<ul>
+  <li><strong>input</strong> &mdash; the files it needs before it can run;</li>
+  <li><strong>output</strong> &mdash; the files it produces;</li>
+  <li><strong>a command or script</strong> &mdash; how to turn input into output.</li>
+</ul>
+<p>Snakemake reads the outputs you asked for and chains rules backwards: if rule B needs a file that rule A produces, it runs A first. The resulting graph of "which rule feeds which" is called the <strong>DAG</strong> (directed acyclic graph). Two features do most of the work:</p>
+<ul>
+  <li><strong>Wildcards.</strong> A pattern like <code>{pango}.fa</code> lets one rule stand in for many files. Ask for <code>KP.3.1.1.fa</code> and Snakemake fills <code>{pango}=KP.3.1.1</code>; ask for three lineages and it runs the same rule three times.</li>
+  <li><strong>Only-what's-needed.</strong> If an output already exists and its inputs haven't changed, Snakemake skips it. Re-running after a change rebuilds just the affected part.</li>
+</ul>
+<p>Two commands you will use constantly:</p>
+<pre><code># Dry run: show what WOULD run, without running anything
+snakemake -s Snakefile_pango_extract --configfile config_pango_extract.yaml -n
+
+# Real run, using up to 4 CPU cores
+snakemake -s Snakefile_pango_extract --configfile config_pango_extract.yaml --cores 4</code></pre>
+<p>A dry run (<code>-n</code>) is the safe way to check the plan before committing compute. It is how every rule in this document was validated.</p>
+
+<h2 class="pagebreak">3 &nbsp; The pipeline at a glance</h2>
+<p>The work splits into three coloured groups. The <strong>infrastructure</strong> rules (blue) download the tree and reference and run once. The <strong>extraction</strong> rules (green) and the <strong>founder</strong> rule (amber) run once per Pango lineage. Arrows mean "produces a file that the next rule needs".</p>
+<div class="imgwrap">
+  <img src="pipeline_graph.png" alt="Pipeline rulegraph">
+</div>
+<p class="cap">Rulegraph for <code>Snakefile_pango_extract</code>. Boxes are rules, not files; the same shape underlies <code>Snakefile_pango_founders</code>, which keeps only the blue reference/JSON rules and the amber founder rule.</p>
+
+<p>There are two Snakefiles because there are two natural stopping points:</p>
+<table>
+  <tr><th>File</th><th>Does</th><th>Needs the 5&nbsp;GB MAT?</th></tr>
+  <tr><td><code>Snakefile_pango_founders</code></td><td>Founder FASTA + defining substitutions only.</td><td>No &mdash; reference + JSON only.</td></tr>
+  <tr><td><code>Snakefile_pango_extract</code></td><td>Everything: tree extraction, mutation tables, sample paths, <em>and</em> the founder.</td><td>Yes.</td></tr>
+</table>
+<p>If you only need founder sequences, run the first &mdash; it is far lighter. If you need the tree and mutation lists too, run the second. The rest of this document walks through the fuller <code>Snakefile_pango_extract</code>; the founder-only pipeline is a strict subset of it.</p>
+
+<h2>4 &nbsp; The steps, one by one</h2>
+<p>For each rule: <strong>what</strong> it does, <strong>why</strong> we need it, its <strong>input</strong> and <strong>output</strong>, and what a correct output looks like.</p>
+
+<h3>4.1 &nbsp; Shared infrastructure <span class="tag">runs once</span></h3>
+
+<div class="card">
+  <h3>get_mat_tree</h3>
+  <p><strong>What / why.</strong> Downloads the pre-built global mutation-annotated tree from UCSC. This is the phylogeny of millions of SARS-CoV-2 genomes with mutations on its branches; every extraction step reads from it.</p>
+  <pre><code>curl {url} > results_{mat}/mat/mat_tree.pb.gz</code></pre>
+  <dl class="io">
+    <dt>Input</dt><dd>A URL (from config <code>mat_trees</code>).</dd>
+    <dt>Output</dt><dd><code>results_{mat}/mat/mat_tree.pb.gz</code></dd>
+    <dt>Looks like</dt><dd>A compressed protobuf file, several gigabytes. Not human-readable &mdash; it is read by <code>matUtils</code>.</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>get_ref_fasta</h3>
+  <p><strong>What / why.</strong> Downloads the Wuhan-Hu-1 reference genome and unzips it. This fixes the coordinate system: every site number and every mutation in the whole pipeline is defined relative to this sequence.</p>
+  <pre><code>wget -O - {url} | gunzip -c > results_{mat}/ref/ref.fa</code></pre>
+  <dl class="io">
+    <dt>Output</dt><dd><code>results_{mat}/ref/ref.fa</code></dd>
+    <dt>Looks like</dt><dd>A single-record FASTA, header <code>&gt;NC_045512v2</code>, sequence length <strong>29,903</strong> nt.</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>get_ref_gtf</h3>
+  <p><strong>What / why.</strong> Downloads the gene annotation (where each gene starts and ends). Needed so nucleotide mutations can later be read as amino-acid changes ("which gene, which codon").</p>
+  <dl class="io">
+    <dt>Output</dt><dd><code>results_{mat}/ref/original_ref.gtf</code></dd>
+    <dt>Looks like</dt><dd>A tab-separated annotation table, one row per gene/feature.</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>edit_ref_gtf_R</h3>
+  <p><strong>What / why.</strong> Runs a small R script to add <code>ORF9b</code> (positions 28284&ndash;28577) to the annotation. <code>ORF9b</code> overlaps the N gene and is missing from the stock file, but it is biologically important, so we insert it.</p>
+  <pre><code>Rscript scripts/1_ref_gtf_minimal.R  original_ref.gtf  edited_ref_R.gtf  edits.json</code></pre>
+  <dl class="io">
+    <dt>Input</dt><dd><code>original_ref.gtf</code> + the edits from config <code>add_to_ref_gtf</code>.</dd>
+    <dt>Output</dt><dd><code>results_{mat}/ref/edited_ref_R.gtf</code></dd>
+    <dt>Looks like</dt><dd>The same GTF with one extra feature row for <code>ORF9b</code>.</dd>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>clade_founder_jsons</h3>
+  <p><strong>What / why.</strong> Downloads two reference files of founder genotypes: the Neher <code>clade_gts.json</code> (keyed by Nextstrain clade) and the Roemer <code>pango-consensus-sequences_summary.json</code> (keyed by Pango lineage). The Pango pipeline uses <strong>only the Roemer JSON</strong>, because it is already indexed by the labels we care about.</p>
+  <dl class="io">
+    <dt>Output</dt><dd><code>clade_founders_neher.json</code>, <code>clade_founders_roemer.json</code></dd>
+    <dt>Looks like</dt><dd>Two JSON files. The Roemer one contains ~5,000 Pango lineages, each with its list of nucleotide substitutions relative to the reference.</dd>
+  </dl>
+</div>
+
+<h3 class="pagebreak">4.2 &nbsp; Per-Pango extraction <span class="tag extract">once per lineage</span></h3>
+
+<div class="card extract">
+  <h3>mat_clade_by_pango <span class="tag extract">the key step</span></h3>
+  <p><strong>What / why.</strong> Cuts the one chosen Pango lineage out of the global tree, using the tree's own Pango annotation. This is where Pango precision enters: <code>-c "KP.3.1.1"</code> pulls exactly that lineage's subtree, rather than a coarse Nextstrain bucket that lumps many lineages together (Section&nbsp;6).</p>
+  <pre><code>matUtils extract -i mat_tree.pb.gz -c "{pango}" -O -o {pango}.pb</code></pre>
+  <dl class="io">
+    <dt>Input</dt><dd>The global MAT.</dd>
+    <dt>Output</dt><dd><code>results_{mat}/pango_extract/{pango}.pb</code></dd>
+    <dt>Looks like</dt><dd>A small MAT protobuf containing only that lineage's subtree. Much smaller than the input.</dd>
+  </dl>
+</div>
+
+<div class="card extract">
+  <h3>extract_tree_per_clade</h3>
+  <p><strong>What / why.</strong> Writes the extracted subtree as a plain <strong>Newick</strong> tree &mdash; the standard text format that tree-plotting and phylogenetics tools read.</p>
+  <pre><code>matUtils extract -i {pango}.pb -t {pango}_tree.nwk</code></pre>
+  <dl class="io">
+    <dt>Output</dt><dd><code>{pango}_tree.nwk</code></dd>
+    <dt>Looks like</dt><dd>A text file of nested parentheses with tip names and branch lengths.</dd>
+  </dl>
+</div>
+
+<div class="card extract">
+  <h3>translate_mat</h3>
+  <p><strong>What / why.</strong> Reads the nucleotide mutations on the subtree and translates them into <strong>amino-acid changes</strong> using the reference and the edited GTF &mdash; telling you which protein and codon each mutation hits.</p>
+  <pre><code>matUtils summary -i {pango}.pb -g edited_ref_R.gtf -f ref.fa -t {pango}_mutations.tsv</code></pre>
+  <dl class="io">
+    <dt>Input</dt><dd>The subtree + reference FASTA + edited GTF.</dd>
+    <dt>Output</dt><dd><code>{pango}_mutations.tsv</code></dd>
+    <dt>Looks like</dt><dd>A tab-separated table of mutations with their gene and amino-acid consequence.</dd>
+  </dl>
+</div>
+
+<div class="card extract">
+  <h3>mat_sample_path</h3>
+  <p><strong>What / why.</strong> For every sample (tip) in the clade, lists the ordered mutations from the tree root down to that tip. Unlike the translation step, this <strong>keeps noncoding sites</strong>, so it is the complete raw material for counting nucleotide mutations.</p>
+  <pre><code>matUtils extract -i {pango}.pb --sample-paths {pango}_sample_paths.tsv</code></pre>
+  <dl class="io">
+    <dt>Output</dt><dd><code>{pango}_sample_paths.tsv</code></dd>
+    <dt>Looks like</dt><dd>One row per sample, each listing the mutation path (e.g. <code>C241T &gt; C3037T &gt; ...</code>).</dd>
+  </dl>
+</div>
+
+<div class="card extract">
+  <h3>sample_path_to_nt_mutations</h3>
+  <p><strong>What / why.</strong> A Python script that parses those path strings into a tidy table &mdash; one row per nucleotide mutation, with its site, the base it changed from and to, and where on the tree it occurred. This is the clean, analysis-ready mutation list.</p>
+  <pre><code>script: scripts/4_sample_path_to_nt_mutations.py</code></pre>
+  <dl class="io">
+    <dt>Input</dt><dd><code>{pango}_sample_paths.tsv</code></dd>
+    <dt>Output</dt><dd><code>{pango}_nt_mutations.csv</code></dd>
+    <dt>Looks like</dt><dd>A CSV of nucleotide mutations, ready for counting and fitness analysis.</dd>
+  </dl>
+</div>
+
+<h3 class="pagebreak">4.3 &nbsp; Founder reconstruction <span class="tag founder">once per lineage</span></h3>
+
+<div class="card founder">
+  <h3>pango_founder_fasta_and_muts</h3>
+  <p><strong>What / why.</strong> Reconstructs the lineage's <strong>founder genome</strong>: start from the reference and apply exactly the substitutions that define the lineage (skipping indels). This founder is the baseline every within-lineage mutation is measured against. Because it reads the Roemer JSON <em>directly by Pango name</em>, no Nextstrain translation is involved.</p>
+  <pre><code>script: scripts/5b_pango_founder_fasta.py</code></pre>
+  <dl class="io">
+    <dt>Input</dt><dd>Roemer JSON + reference FASTA + the wildcard <code>{pango}</code>.</dd>
+    <dt>Output</dt><dd><code>{pango}.fa</code> (founder genome) and <code>{pango}_ref_to_founder_muts.csv</code> (defining substitutions).</dd>
+    <dt>Looks like</dt><dd>A single-record FASTA (header = the Pango name, length 29,903 nt) and a CSV of the substitutions.</dd>
+  </dl>
+</div>
+
+<h2>5 &nbsp; Inside the founder script</h2>
+<p>This is the one script written specially for the Pango workflow, so it is worth understanding. It does four things:</p>
+<ol>
+  <li><strong>Read the reference</strong> into memory (enforcing that it is a single record).</li>
+  <li><strong>Look up the lineage</strong> in the Roemer JSON by its Pango name. If the name is not present, it stops and lists nearby names, so typos are obvious.</li>
+  <li><strong>Apply each substitution.</strong> A substitution like <code>C241T</code> means "at site 241 the reference has <code>C</code>; change it to <code>T</code>". The script checks that the reference really does have <code>C</code> there before changing it &mdash; a mismatch would signal a coordinate or reference-version error, and by default it stops (<code>founder_strict_ref_check: true</code>). Deletions are listed in the JSON but deliberately <strong>not applied</strong>, giving a "no-indels" founder.</li>
+  <li><strong>Write outputs:</strong> the founder FASTA, and a CSV with columns <code>pango, nextstrain_clade, nt_site, ref_nt, founder_nt, nt_mutation</code>. The <code>nextstrain_clade</code> value is copied from the JSON purely as a label &mdash; it never drives the reconstruction.</li>
+</ol>
+<div class="callout">
+  <span class="lbl">Why the strict check matters.</span> Substitution positions are 1-based and relative to Wuhan-Hu-1. If the wrong reference were supplied, hundreds of positions would disagree, and the script would refuse rather than silently build a corrupt founder. This is the pipeline's built-in guard against the most common class of error.
+</div>
+
+<h2>6 &nbsp; Why Pango, not Nextstrain</h2>
+<p>This is the whole reason the pipeline was rebuilt around Pango. A Nextstrain clade is a coarse bucket; a Pango lineage is precise. The consequences are concrete and measurable. Take Nextstrain clade <code>20B</code> and the Pango lineage <code>AD.2</code> inside it:</p>
+<table>
+  <tr><th>Question</th><th>Nextstrain <code>20B</code></th><th>Pango <code>AD.2</code></th></tr>
+  <tr><td>How many lineages does the label cover?</td><td><strong>480</strong> Pango lineages lumped together</td><td>Exactly one</td></tr>
+  <tr><td>Founder substitutions</td><td>7 (B.1.1-level ancestor)</td><td><strong>18</strong> (true AD.2 ancestor)</td></tr>
+  <tr><td>Sample set extracted</td><td>All samples of all 480 lineages</td><td>Just the AD.2 subtree</td></tr>
+</table>
+<p>The founder gap is the crux. The coarse <code>20B</code> founder is missing the <strong>11</strong> substitutions that actually define AD.2:</p>
+<p class="muts">A1163T &nbsp; T3256C &nbsp; C5622T &nbsp; G14202T &nbsp; G19542T &nbsp; C19718T &nbsp; C22388T &nbsp; C26060T &nbsp; G29227T &nbsp; C29466T &nbsp; A29771G</p>
+<p>Measured against the coarse founder, those 11 fixed differences would be miscounted as mutations <em>arising within the clade</em>, rather than as part of the ancestral background. That error flows straight into mutation counts, expected-versus-observed comparisons, and therefore the fitness and epistasis estimates. The Pango founder removes it.</p>
+<div class="callout warn">
+  <span class="lbl">The honest framing.</span> The old and new results are not a like-for-like comparison to be reconciled mutation-by-mutation &mdash; the old <code>20B</code> "clade" is a superset of 480 Pango lineages. The correct statement is that <strong>Pango resolves what Nextstrain aggregates</strong>: here, a 480-to-1 collapse with an 11-substitution founder error for AD.2 specifically.
+</div>
+
+<h2 class="pagebreak">7 &nbsp; How to run it</h2>
+<p><strong>Prerequisites.</strong> Run from the repository root, so the <code>scripts/</code> folder is found. You need Snakemake, plus <code>matUtils</code> (from UShER) on your PATH for the extraction pipeline.</p>
+<p><strong>Step 1 &mdash; choose your lineages.</strong> Edit the config and list the Pango lineages you want:</p>
+<pre><code>pango_clades:
+  - KP.3.1.1
+  - XEC
+  - LP.8.1</code></pre>
+<p><strong>Step 2 &mdash; check the plan (dry run):</strong></p>
+<pre><code>snakemake -s Snakefile_pango_extract --configfile config_pango_extract.yaml -n</code></pre>
+<p><strong>Step 3 &mdash; run it:</strong></p>
+<pre><code>snakemake -s Snakefile_pango_extract --configfile config_pango_extract.yaml --cores 4</code></pre>
+<p>For founder sequences only (no tree, no 5&nbsp;GB download), swap in the lighter pipeline:</p>
+<pre><code>snakemake -s Snakefile_pango_founders --cores 1</code></pre>
+
+<h2>8 &nbsp; Expected outputs</h2>
+<p>Per Pango lineage, under <code>results_{mat}/pango_extract/</code>:</p>
+<table>
+  <tr><th>File</th><th>Produced by</th><th>Contents</th></tr>
+  <tr><td><code>{pango}.pb</code></td><td>mat_clade_by_pango</td><td>Extracted MAT subtree for the lineage.</td></tr>
+  <tr><td><code>{pango}_tree.nwk</code></td><td>extract_tree_per_clade</td><td>Newick tree of the lineage.</td></tr>
+  <tr><td><code>{pango}_mutations.tsv</code></td><td>translate_mat</td><td>Mutations with amino-acid consequences.</td></tr>
+  <tr><td><code>{pango}_sample_paths.tsv</code></td><td>mat_sample_path</td><td>Per-sample root-to-tip mutation paths (incl. noncoding).</td></tr>
+  <tr><td><code>{pango}_nt_mutations.csv</code></td><td>sample_path_to_nt_mutations</td><td>Tidy nucleotide-mutation table.</td></tr>
+  <tr><td><code>{pango}.fa</code></td><td>pango_founder_fasta_and_muts</td><td>Reconstructed founder genome (29,903 nt).</td></tr>
+  <tr><td><code>{pango}_ref_to_founder_muts.csv</code></td><td>pango_founder_fasta_and_muts</td><td>Substitutions defining the founder.</td></tr>
+</table>
+
+<h2>9 &nbsp; Sanity-checking a founder</h2>
+<p>Because the founder underpins everything, it is worth spot-checking. A quick, decisive test is to confirm the reconstructed substitutions match the Roemer consensus and that the clade backbone makes sense. For AD.2, for example, the founder should carry:</p>
+<ul>
+  <li>the 20A backbone <code>C241T, C3037T, C14408T, A23403G</code> (the last is Spike D614G);</li>
+  <li>the B.1.1 trinucleotide at 28881&ndash;28883 (<code>G28881A, G28882A, G28883C</code>), which is what places it in Nextstrain 20B;</li>
+  <li>18 substitutions in total, with no deletions applied.</li>
+</ul>
+<p>If those hold, both the sequence and its clade assignment are internally consistent. A single command &mdash; comparing your <code>{pango}_ref_to_founder_muts.csv</code> against the Roemer JSON entry &mdash; is enough to confirm a lineage before trusting its downstream numbers.</p>
+
+<h2>10 &nbsp; Glossary</h2>
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td>MAT</td><td>Mutation-annotated tree: a phylogeny with mutations placed on its branches, stored as a <code>.pb</code> protobuf.</td></tr>
+  <tr><td>UShER / matUtils</td><td>The toolkit that builds and queries MATs. <code>matUtils extract</code> and <code>summary</code> do the tree cutting and translation here.</td></tr>
+  <tr><td>Pango lineage</td><td>Fine-grained lineage label (e.g. <code>AD.2</code>, <code>KP.3.1.1</code>).</td></tr>
+  <tr><td>Nextstrain clade</td><td>Coarser label (e.g. <code>20B</code>); one clade can span hundreds of Pango lineages.</td></tr>
+  <tr><td>Founder genome</td><td>Reconstructed ancestral sequence for a lineage; the baseline for counting later mutations.</td></tr>
+  <tr><td>FASTA</td><td>Plain-text sequence format: a header line starting <code>&gt;</code> then the sequence.</td></tr>
+  <tr><td>Newick</td><td>Text format for trees, using nested parentheses.</td></tr>
+  <tr><td>Reference (Wuhan-Hu-1)</td><td>The 29,903-nt genome that fixes all site coordinates.</td></tr>
+  <tr><td>Rule / DAG / wildcard</td><td>Snakemake's building block; the graph of rule dependencies; and the pattern (<code>{pango}</code>) that lets one rule serve many files.</td></tr>
+</table>
+
+</body>
+</html>
