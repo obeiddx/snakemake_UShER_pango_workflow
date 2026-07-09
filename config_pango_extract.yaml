@@ -1,0 +1,25 @@
+# =====================================================
+# Config for Snakefile_pango_extract (standalone)
+# =====================================================
+
+# ---- MAT tree ----
+mat_trees:
+  public_2026_05_19: https://hgdownload.gi.ucsc.edu/goldenPath/wuhCor1/UShER_SARS-CoV-2/2025/05/19/public-2025-05-19.all.masked.pb.gz
+current_mat: public_2026_05_19
+
+# ---- Reference (needed only for translate_mat = AA mutations) ----
+ref_fasta: http://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/bigZips/wuhCor1.fa.gz
+ref_gtf: http://hgdownload.soe.ucsc.edu/goldenPath/wuhCor1/bigZips/genes/ncbiGenes.gtf.gz
+add_to_ref_gtf:
+  ORF9b: [28284, 28577]
+
+# ---- Founder genotype JSONs (Pango-keyed founder FASTA) ----
+clade_founders:
+  neher_json: https://raw.githubusercontent.com/neherlab/SC2_variant_rates/7e738194a8c6592082f1caa9a6ca70cb68289790/data/clade_gts.json
+  roemer_json: https://raw.githubusercontent.com/corneliusroemer/pango-sequences/main/data/pango-consensus-sequences_summary.json
+
+# ---- Pango lineages of interest ----
+# Extracted from the MAT and named by Pango throughout.
+pango_clades:
+  - AD.2
+  - LP.8.1
